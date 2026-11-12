@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Analizador de CV (Streamlit)",
+      "type": "shell",
+      "command": "streamlit run app.py --server.address=0.0.0.0 --server.port=8501",
+      "options": { "cwd": "${workspaceFolder}/cv_analyzer" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Pruebas Analizador de CV (pytest)",
+      "type": "shell",
+      "command": "python -m pytest -v",
+      "options": { "cwd": "${workspaceFolder}/cv_analyzer" },
+      "problemMatcher": []
+    }
+  ]
+}
