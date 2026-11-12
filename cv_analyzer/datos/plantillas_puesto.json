@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "plantillas": [
+    {
+      "nombre": "Desarrollador Backend Java",
+      "descripcion": "Puesto: Desarrollador Backend Java (Junior/Semi Senior)\nRequisitos obligatorios: 1 año de experiencia, Java, Spring Boot, APIs REST, SQL (PostgreSQL o MySQL) y Git.\nDeseables: Docker, pruebas unitarias con JUnit, arquitectura hexagonal y metodologías ágiles.\nResponsabilidades: desarrollar y mantener servicios REST, diseñar modelos de datos, escribir pruebas y participar en revisiones de código."
+    },
+    {
+      "nombre": "Desarrollador Python",
+      "descripcion": "Puesto: Desarrollador Python\nRequisitos obligatorios: 3 años de experiencia, Python, APIs REST y PostgreSQL.\nDeseables: Docker, pruebas automatizadas y experiencia con LangChain.\nResponsabilidades: desarrollar servicios, integrar APIs y mantener pruebas."
+    },
+    {
+      "nombre": "Desarrollador Full Stack",
+      "descripcion": "Puesto: Desarrollador Full Stack\nRequisitos obligatorios: 1 año de experiencia, Spring Boot o Node.js, HTML, CSS, JavaScript y una base de datos relacional (Oracle, MySQL o PostgreSQL).\nDeseables: React, TypeScript, Docker y despliegue en la nube.\nResponsabilidades: construir interfaces web, desarrollar APIs y mantener la base de datos."
+    },
+    {
+      "nombre": "Desarrollador Frontend React",
+      "descripcion": "Puesto: Desarrollador Frontend React\nRequisitos obligatorios: 1 año de experiencia, JavaScript, React, HTML y CSS.\nDeseables: TypeScript, Vite, pruebas con Testing Library y diseño responsive.\nResponsabilidades: construir componentes reutilizables, consumir APIs REST y cuidar la accesibilidad."
+    },
+    {
+      "nombre": "Ingeniero de IA / LLM",
+      "descripcion": "Puesto: Ingeniero de IA aplicada (LLM)\nRequisitos obligatorios: Python, LangChain o frameworks similares, consumo de APIs de modelos (OpenAI, Gemini u Ollama) y prompts estructurados.\nDeseables: RAG con bases de datos vectoriales (Chroma), Streamlit, Docker y evaluación de modelos.\nResponsabilidades: diseñar asistentes con IA, construir pipelines de datos y medir la calidad de las respuestas."
+    },
+    {
+      "nombre": "Analista de Datos",
+      "descripcion": "Puesto: Analista de Datos Junior\nRequisitos obligatorios: SQL, Excel avanzado y Python (pandas).\nDeseables: Power BI o Tableau, estadística básica y comunicación de resultados.\nResponsabilidades: limpiar y analizar datos, construir reportes y apoyar decisiones del negocio."
+    }
+  ]
+}
