@@ -1,41 +1,40 @@
 # 📄 Analizador de CV con IA
 
-Aplicación de Streamlit que compara un currículum en PDF con la descripción de un puesto. Extrae el texto del documento, lo envía a un modelo de **Gemini** mediante **LangChain** y muestra un análisis estructurado del candidato: perfil, habilidades, fortalezas, áreas de mejora, porcentaje de ajuste y recomendación de contratación.
+Aplicación de Streamlit que compara currículums en PDF con la descripción de un puesto. Usa **LangChain** con **Gemini, OpenAI u Ollama**, salida estructurada con **Pydantic**, **RAG** con **Chroma** para chatear con el CV y **PostgreSQL** (en Docker) para el historial.
 
-> El porcentaje lo estima un modelo de IA y puede variar entre ejecuciones. Es una herramienta de apoyo, no una decisión de contratación.
+> El análisis es un apoyo generado por IA y puede variar entre ejecuciones. No reemplaza la decisión de una persona.
 
-## Funcionalidades
+## ✨ Funcionalidades
 
-- Carga de un CV en PDF con texto seleccionable.
-- Entrada de requisitos y responsabilidades del puesto.
-- Extracción de nombre, experiencia, educación y habilidades relevantes.
-- Fortalezas y áreas de mejora.
-- Porcentaje de ajuste al puesto entre 0 y 100.
-- Evaluación principal y recomendación final calculadas a partir del porcentaje.
-- El resultado se conserva en `st.session_state` hasta pulsar **Limpiar**.
-- **Guardar Análisis** muestra un aviso de funcionalidad en desarrollo (no hay persistencia).
+| Área | Qué hace |
+| --- | --- |
+| 🔍 **Evaluar** | Ajuste al puesto, nota por criterio con **gráfico radar**, requisitos ✅/🟡/❌ con **evidencia del CV**, habilidades, fortalezas y áreas de mejora |
+| 📋 **Plantillas** | 6 descripciones de puesto listas para usar |
+| 🎤 **Entrevista** | Preguntas sugeridas para aclarar lo que el CV no demuestra |
+| 📄 **Documento** | Vista del PDF y del texto que realmente leyó la IA |
+| ⬇️ **Exportar** | Informe en JSON o Markdown |
+| 📊 **Comparar** | Ranking de hasta 10 candidatos para el mismo puesto, con descarga en CSV |
+| 💬 **Chat con el CV** | Preguntas en lenguaje natural respondidas con **RAG** (embeddings + Chroma), citando la página |
+| 🗂️ **Historial** | Análisis guardados en **PostgreSQL**, con búsqueda, filtros, estadísticas, feedback 👍/👎 y eliminación |
+| 🤖 **Modelos** | Selector Gemini / OpenAI / Ollama en la barra lateral |
+| ♻️ **Caché** | El mismo CV con el mismo puesto y el mismo modelo no se vuelve a enviar a la IA |
 
-## Funcionamiento
+## ⚙️ Cómo funciona
 
 ```text
-CV.pdf ──► pdf_processor.extraer_texto_pdf() ──┐
-                                               ├──► cv_prompts.crear_sistema_prompts()
-Descripción del puesto ────────────────────────┘                │
-                                                                ▼
-                         cv_evaluator.evaluar_candidato()  (prompt | Gemini con salida estructurada)
-                                                                │
-                                                                ▼
-                         AnalisisCV ──► umbrales ──► streamlit_ui muestra el resultado
+CV.pdf ─► pypdf (texto) ─┐
+                          ├─► prompt de reclutador ─► modelo con salida estructurada ─► AnalisisCV
+Puesto ──────────────────┘                                                               │
+                                                     notas por criterio ─► Python calcula el % ponderado
+                                                                                         │
+                                                     umbrales ─► etiquetas ─► interfaz / historial / informe
+
+Chat:  CV ─► fragmentos ─► embeddings ─► Chroma ─► (pregunta) ─► fragmentos parecidos ─► modelo ─► respuesta
 ```
 
-1. `app.py` carga el `.env` y llama a `main()` de la interfaz.
-2. El usuario sube un PDF y escribe la descripción del puesto.
-3. Al pulsar **Analizar Candidato**, la interfaz comprueba que existan ambas entradas.
-4. `extraer_texto_pdf()` lee el PDF con `pypdf`, recorre sus páginas y une el texto con separadores. Si no hay texto, el archivo está dañado o es demasiado largo, lanza `ErrorPDF`.
-5. `evaluar_candidato()` valida la descripción y llama a la cadena `prompt | modelo_estructurado`. Cualquier fallo se convierte en `ErrorEvaluacion`: **nunca** se muestra un resultado inventado.
-6. `umbrales.py` convierte el porcentaje en las etiquetas de la interfaz.
+### Criterios y umbrales
 
-### Criterios de evaluación (en el prompt)
+El modelo da una nota de 0 a 100 por criterio; **Python** calcula el total ponderado:
 
 | Criterio | Peso |
 | --- | --- |
@@ -44,10 +43,6 @@ Descripción del puesto ──────────────────�
 | Formación y certificaciones | 15 % |
 | Coherencia profesional | 10 % |
 
-El porcentaje lo genera el modelo siguiendo estos pesos; el código no calcula una fórmula ponderada.
-
-### Umbrales (calculados en Python)
-
 | Porcentaje | Evaluación principal | | Porcentaje | Recomendación final |
 | --- | --- | --- | --- | --- |
 | 80–100 | 🟢 Excelente | | 70–100 | ✅ Candidato recomendado |
@@ -55,78 +50,71 @@ El porcentaje lo genera el modelo siguiendo estos pesos; el código no calcula u
 | 40–59 | 🟠 Regular | | 0–49 | ❌ Candidato no recomendado |
 | 0–39 | 🔴 Bajo | | | |
 
-Ejemplo: 65 % → **Bueno** y **Candidato con potencial**.
-
-## Estructura
+## 🗂️ Estructura
 
 ```text
 .
 ├── .devcontainer/devcontainer.json   # Dev Container de VS Code
 ├── .vscode/tasks.json                # Tareas: Streamlit y pytest
 ├── Dockerfile                        # Python 3.12 + dependencias
-├── docker-compose.yml                # Monta el proyecto en /app, puerto 8501
-├── .dockerignore
-├── .gitignore
+├── docker-compose.yml                # app + PostgreSQL (servicio db)
+├── .env.example                      # (opcional) credenciales de PostgreSQL
 ├── README.md
-├── GUIA_DE_ESTUDIO.md                # Explicación de cada archivo
+├── DESPLIEGUE.md                     # Cómo publicar la app
 └── cv_analyzer/
-    ├── app.py                        # Punto de entrada de Streamlit
-    ├── models/cv_model.py            # Esquema Pydantic AnalisisCV
-    ├── prompts/cv_prompts.py         # Instrucciones, pesos y plantilla
+    ├── app.py                        # Configuración, navegación y barra lateral
+    ├── .streamlit/config.toml        # Tema de colores y límite de subida
+    ├── .env.example                  # Claves y modelos de los proveedores
+    ├── datos/plantillas_puesto.json  # Plantillas de puesto
+    ├── models/cv_model.py            # AnalisisCV, PuntajesCriterios, RequisitoEvaluado, PreguntasEntrevista
+    ├── prompts/                      # cv_prompts, entrevista_prompts, rag_prompts
     ├── services/
-    │   ├── pdf_processor.py          # Extracción de texto del PDF
-    │   ├── cv_evaluator.py           # Configuración e invocación del modelo
-    │   └── umbrales.py               # Porcentaje → etiquetas
-    ├── ui/streamlit_ui.py            # Entradas, validaciones y presentación
-    ├── tests/test_cv_analyzer.py     # 37 pruebas sin llamar al modelo
-    ├── requirements.txt
-    └── .env.example
+    │   ├── proveedores.py            # Gemini / OpenAI / Ollama (chat y embeddings)
+    │   ├── cv_evaluator.py           # Evaluación con salida estructurada
+    │   ├── pdf_processor.py          # Texto y huella del PDF
+    │   ├── umbrales.py               # Porcentaje → etiquetas
+    │   ├── entrevista.py             # Preguntas sugeridas
+    │   ├── rag.py                    # Chat con el CV (RAG + Chroma)
+    │   ├── historial.py              # SQLAlchemy: PostgreSQL o SQLite
+    │   ├── informe.py                # Exportación JSON y Markdown
+    │   ├── plantillas.py             # Lectura de plantillas
+    │   └── errores.py                # Errores propios
+    ├── ui/
+    │   ├── estado.py                 # session_state y barra lateral
+    │   ├── cache.py                  # st.cache_resource y st.cache_data
+    │   ├── flujo.py                  # PDF → ResultadoEvaluacion
+    │   ├── componentes.py            # Tarjetas, radar, pestañas, feedback
+    │   └── paginas/                  # evaluar, comparar, chat, historial, acerca
+    ├── tests/                        # 60 pruebas sin llamar a ninguna API
+    └── requirements.txt
 ```
 
-### Modelo de salida (`AnalisisCV`)
-
-Todos los campos son obligatorios:
-
-| Campo | Tipo | Contenido |
-| --- | --- | --- |
-| `nombre_candidato` | `str` | Nombre extraído del CV |
-| `experiencia_anios` | `int` (0–60) | Años de experiencia relevante |
-| `habilidades_clave` | `list[str]` | Habilidades relevantes para el puesto |
-| `education` | `str` | Nivel educativo y especialización |
-| `experiencia_relevante` | `str` | Resumen de experiencia relacionada |
-| `fortalezas` | `list[str]` | Fortalezas del candidato |
-| `areas_mejora` | `list[str]` | Áreas de desarrollo |
-| `porcentaje_ajuste` | `int` (0–100) | Ajuste al puesto |
-
-## Instalación (Dev Container)
+## 🚀 Instalación (Dev Container)
 
 Requisitos: Docker Desktop y VS Code con la extensión **Dev Containers**.
 
-1. Abre esta carpeta en VS Code.
-2. `Ctrl + Shift + P` → **Dev Containers: Reopen in Container**. Al crearse, el contenedor instala `cv_analyzer/requirements.txt`.
-3. Si otro contenedor usa el puerto 8501, detenlo antes (`docker stop <nombre>`).
-
-## Configuración
-
-En la terminal del contenedor:
+1. Si otro contenedor usa el puerto 8501, detenlo (`docker stop <nombre>`).
+2. Abre esta carpeta en VS Code → `Ctrl + Shift + P` → **Dev Containers: Reopen in Container**. Se levantan **dos** contenedores: `cv-analyzer-dev` (la app) y `cv-analyzer-db` (PostgreSQL).
+3. En la terminal del contenedor:
 
 ```bash
 cd /app/cv_analyzer
 cp .env.example .env
 ```
 
-Edita `cv_analyzer/.env`:
+4. Edita `cv_analyzer/.env` y configura **al menos un** proveedor:
 
-| Variable | Valor |
-| --- | --- |
-| `GOOGLE_API_KEY` | Tu clave de Google AI Studio |
-| `GEMINI_MODEL` | Un modelo Gemini compatible con salida estructurada (por ejemplo, `gemini-3.5-flash-lite`) |
+| Proveedor | Variables | Notas |
+| --- | --- | --- |
+| Gemini | `GOOGLE_API_KEY`, `GEMINI_MODEL`, `GEMINI_EMBEDDING_MODEL` | El modelo de embeddings solo es necesario para el chat |
+| OpenAI | `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_EMBEDDING_MODEL` | Opcional |
+| Ollama | `OLLAMA_MODEL`, `OLLAMA_EMBEDDING_MODEL` | Gratis y local: Ollama debe estar corriendo en tu PC (`ollama pull <modelo>`) |
 
-`.env` está en `.gitignore` y **nunca** se sube al repositorio. `app.py` lo carga con `load_dotenv()`.
+La base de datos **no** se configura aquí: `docker-compose.yml` ya le pasa `DATABASE_URL` a la app.
 
-## Ejecución
+## ▶️ Ejecución
 
-Desde `cv_analyzer/` (o `Ctrl + Shift + B` en VS Code):
+Desde `cv_analyzer/` (o `Ctrl + Shift + B`):
 
 ```bash
 streamlit run app.py --server.address=0.0.0.0 --server.port=8501
@@ -134,57 +122,43 @@ streamlit run app.py --server.address=0.0.0.0 --server.port=8501
 
 Abre <http://localhost:8501>.
 
-Ejemplo de descripción del puesto:
+### Sin Docker
 
-```text
-Puesto: Desarrollador Python
-Requisitos obligatorios: 3 años de experiencia, Python, APIs REST y PostgreSQL.
-Deseables: Docker, pruebas automatizadas y experiencia con LangChain.
-Responsabilidades: desarrollar servicios, integrar APIs y mantener pruebas.
-```
+Con un entorno virtual también funciona: si no existe `DATABASE_URL`, el historial se guarda en `cv_analyzer/datos/historial.db` (SQLite). Cambia `OLLAMA_BASE_URL` a `http://localhost:11434` si usas Ollama.
 
-## Pruebas automáticas
+## 🧪 Pruebas
 
 ```bash
 python -m pytest -v
 ```
 
-37 pruebas que no usan la API: umbrales (incluidos los límites 39/40, 49/50, 59/60, 69/70, 79/80), validaciones de `AnalisisCV`, extracción de PDF (texto, PDF sin texto, archivo inválido, CV demasiado largo), prompt (pesos que suman 100, regla anti-inyección) y evaluador (entrada inválida que no llama al modelo, fallo de API sin resultado inventado, respuesta con formato inesperado).
+60 pruebas que **no** usan ninguna API: puntaje ponderado, umbrales, Pydantic, PDF, prompts, evaluador (entrada inválida, fallo de API, formato inesperado), proveedores, historial (con SQLite en memoria), RAG (con embeddings y modelo falsos), entrevista, informes y plantillas.
 
-## Mejoras respecto a la versión de referencia
+## 🗄️ Base de datos
 
-| Problema de la versión de referencia | Solución |
-| --- | --- |
-| El `except` del evaluador creaba `AnalisisCV` con campos mal escritos (`fotalezas`, `porcetaje_ajuste`) y también fallaba | No se construye un resultado alternativo: se lanza `ErrorEvaluacion` y la interfaz muestra el error |
-| El resultado desaparecía con cualquier interacción | Se guarda en `st.session_state` |
-| **Limpiar** solo hacía `st.rerun()` | Un callback borra la descripción, el resultado y reinicia el selector de archivo |
-| No se cargaba el `.env` | `app.py` llama a `load_dotenv()` |
-| Sin control de longitud del CV | Límite de 30 000 caracteres |
-| Texto del CV sin protección contra instrucciones ocultas | El prompt trata el CV como datos (regla anti-inyección) |
-| Etiquetas dependientes del modelo | Se calculan en Python a partir del porcentaje |
+- PostgreSQL 17 en el servicio `db`, con un volumen (`datos_postgres`): los datos sobreviven a `docker compose down`.
+- `docker compose down -v` **borra** el volumen y, con él, el historial.
+- El puerto de PostgreSQL no se publica fuera de Docker. Para verlo con DBeaver o pgAdmin, descomenta `ports` en el servicio `db`.
+- Para cambiar usuario y contraseña, crea un `.env` en la raíz a partir de `.env.example` (antes de crear la base).
+- Se guarda el **análisis**, no el PDF ni su texto (datos personales).
 
-## Decisiones técnicas
+## 🔐 Privacidad y límites
 
-- **Modelo:** Gemini con `langchain-google-genai` en lugar de `gpt-4o-mini` (el profesor permite elegir el proveedor). Temperatura `0.2`; algunos modelos Gemini tienen valores de muestreo fijos y la ignoran (aparece un `UserWarning`).
-- **Salida estructurada:** `with_structured_output(AnalisisCV, method="json_schema")`.
-- **PDF:** `pypdf` en lugar de `PyPDF2`, que está obsoleto y fue sustituido por `pypdf` (misma clase `PdfReader`).
-- **`experiencia_anios`:** se escribe sin «ñ» para evitar caracteres especiales en el esquema que se envía al modelo.
+- El texto del CV se envía al proveedor elegido; con **Ollama** se procesa en tu computador.
+- El `.gitignore` excluye los `.env`, los `.pdf` y la base SQLite local.
+- Sin OCR: los PDF escaneados no se pueden leer.
+- El prompt trata el CV como datos: ignora instrucciones escondidas (inyección de prompt).
+- El chat responde solo con fragmentos del CV y debe decir cuándo el CV no menciona algo.
 
-## Limitaciones
-
-- **Sin OCR:** un PDF escaneado (solo imágenes) no se puede analizar.
-- **Sin persistencia:** el análisis no se guarda en disco ni en base de datos.
-- **Un CV por análisis:** no hay procesamiento por lotes.
-- **Evaluación generativa:** el porcentaje y las observaciones pueden variar entre ejecuciones; no hay validación independiente del criterio de contratación.
-- **Privacidad:** el texto del CV se envía a la API de Gemini. Usa CV propios o con permiso del dueño.
-
-## Resolución de problemas
+## 🛠️ Resolución de problemas
 
 | Síntoma | Qué revisar |
 | --- | --- |
-| No aparece «Reopen in Container» | Abre la carpeta raíz (la que tiene `.devcontainer`) e instala la extensión Dev Containers |
-| `ModuleNotFoundError` de `ui`, `services`... | Ejecuta Streamlit desde `cv_analyzer/` |
-| «Falta la variable GOOGLE_API_KEY» | Crea `cv_analyzer/.env` a partir de `.env.example` |
-| «No se encontró texto en el PDF» | El PDF es escaneado: usa uno con texto seleccionable |
-| Error del modelo | Revisa la clave, la cuota, la conexión y el nombre de `GEMINI_MODEL` |
-| `port is already allocated` | Otro contenedor usa el 8501: detenlo o cambia el puerto del host en `docker-compose.yml` |
+| La barra lateral dice «No hay proveedores configurados» | Crea `cv_analyzer/.env` y llena las variables de al menos un proveedor |
+| «Para chatear con el CV falta …_EMBEDDING_MODEL» | Agrega el modelo de embeddings del proveedor elegido |
+| Error de base de datos en Historial | `docker compose ps`: el servicio `db` debe estar `healthy` |
+| Ollama no responde | Ollama debe estar abierto en tu PC; revisa `OLLAMA_BASE_URL` |
+| «No se encontró texto en el PDF» | Es un PDF escaneado: usa uno con texto seleccionable |
+| `port is already allocated` | Otro contenedor usa el 8501 |
+
+Para publicar la app, consulta [DESPLIEGUE.md](DESPLIEGUE.md).

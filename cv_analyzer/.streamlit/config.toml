@@ -1,0 +1,15 @@
+# Tema y configuración de Streamlit (se lee al ejecutar desde cv_analyzer/)
+
+[theme]
+base = "light"
+primaryColor = "#0E7C66"
+backgroundColor = "#F7F6F2"
+secondaryBackgroundColor = "#E9EFEC"
+textColor = "#14213D"
+font = "sans serif"
+
+[server]
+maxUploadSize = 10   # MB por archivo: un CV no necesita más
+
+[browser]
+gatherUsageStats = false

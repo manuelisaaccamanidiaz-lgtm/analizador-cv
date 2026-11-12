@@ -8,5 +8,6 @@ __pycache__/
 .venv/
 venv/
 
-# CV de prueba: contienen datos personales, no se suben al repositorio
+# Datos personales: CV de prueba y base SQLite local
 *.pdf
+cv_analyzer/datos/historial.db
