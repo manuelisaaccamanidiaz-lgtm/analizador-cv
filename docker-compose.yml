@@ -1,3 +1,6 @@
+# Entorno de desarrollo: la app (Streamlit) + PostgreSQL para el historial.
+# Las variables POSTGRES_* se pueden cambiar en un archivo .env en esta carpeta (ver .env.example).
+
 services:
   app:
     build:
@@ -7,6 +10,37 @@ services:
     ports:
       - "8501:8501"
     volumes:
-      - .:/app          # la carpeta del PC aparece en /app dentro del contenedor
+      - .:/app                      # la carpeta del PC aparece en /app dentro del contenedor
     working_dir: /app
-    command: sleep infinity   # el contenedor queda encendido; Streamlit se lanza a mano
+    command: sleep infinity         # el contenedor queda encendido; Streamlit se lanza a mano
+    environment:
+      # La app se conecta al servicio "db" por la red interna de Docker
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-cv_app}:${POSTGRES_PASSWORD:-cv_local_dev}@db:5432/${POSTGRES_DB:-cv_analyzer}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # para llegar a Ollama en tu PC
+    depends_on:
+      db:
+        condition: service_healthy  # espera a que PostgreSQL acepte conexiones
+
+  db:
+    image: postgres:17-alpine
+    container_name: cv-analyzer-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cv_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cv_local_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-cv_analyzer}
+    volumes:
+      - datos_postgres:/var/lib/postgresql/data   # los datos sobreviven a docker compose down
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Sin "ports": la base de datos NO se expone fuera de Docker, solo la app la ve.
+    # Para inspeccionarla con DBeaver o pgAdmin, descomenta estas líneas:
+    # ports:
+    #   - "5433:5432"
+
+volumes:
+  datos_postgres:
