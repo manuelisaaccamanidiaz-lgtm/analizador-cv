@@ -60,7 +60,6 @@ El modelo da una nota de 0 a 100 por criterio; **Python** calcula el total ponde
 ├── docker-compose.yml                # app + PostgreSQL (servicio db)
 ├── .env.example                      # (opcional) credenciales de PostgreSQL
 ├── README.md
-├── GUIA_DE_ESTUDIO.md                # Explicación de cada archivo (incluye RAG)
 ├── DESPLIEGUE.md                     # Cómo publicar la app
 └── cv_analyzer/
     ├── app.py                        # Configuración, navegación y barra lateral
