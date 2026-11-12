@@ -4,23 +4,34 @@ Funciona con PDF de texto seleccionable. No hace OCR: un PDF hecho solo de
 imágenes (escaneado) no tiene texto que extraer.
 """
 
+import hashlib
+import io
+
 from pypdf import PdfReader
+
+from services.errores import ErrorPDF
 
 # Un CV normal tiene unos pocos miles de caracteres. El límite evita enviar
 # documentos enormes al modelo (más tokens = más costo y más tiempo).
 MAX_CARACTERES_CV = 30_000
 
+__all__ = ["ErrorPDF", "MAX_CARACTERES_CV", "extraer_texto_pdf", "huella_archivo"]
 
-class ErrorPDF(Exception):
-    """El PDF no se pudo leer o no contiene texto utilizable."""
+
+def huella_archivo(contenido: bytes) -> str:
+    """Huella SHA-256 del archivo: el mismo PDF siempre da la misma huella (sirve para la caché)."""
+    return hashlib.sha256(contenido).hexdigest()
 
 
 def extraer_texto_pdf(archivo) -> str:
     """Devuelve el texto del PDF con un separador por página.
 
-    `archivo` puede ser una ruta o un objeto tipo archivo (como el que
-    entrega st.file_uploader). Lanza ErrorPDF con un mensaje claro si algo falla.
+    `archivo` puede ser una ruta, bytes o un objeto tipo archivo (como el de st.file_uploader).
+    Lanza ErrorPDF con un mensaje claro si algo falla.
     """
+    if isinstance(archivo, bytes):
+        archivo = io.BytesIO(archivo)
+
     try:
         lector = PdfReader(archivo)
         if lector.is_encrypted:
