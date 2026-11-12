@@ -1,0 +1,12 @@
+# Secretos (en cualquier carpeta)
+**/.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# CV de prueba: contienen datos personales, no se suben al repositorio
+*.pdf
